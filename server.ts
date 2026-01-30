@@ -11,6 +11,7 @@ import createCommentRouter from './src/routes/createComments.js';
 import getCommentRouter from './src/routes/getComments.js';
 import deleteCommentRouter from './src/routes/deleteComments.js';
 import getUsersByRoleRouter from './src/routes/getAllUsers.js';
+import { errorHandler, notFoundHandler } from './src/middlewares/errorHandler.js';
 
 
 
@@ -32,6 +33,10 @@ app.use('/api', createCommentRouter);
 app.use('/api', getCommentRouter);
 app.use('/api', deleteCommentRouter);
 app.use('/api', getUsersByRoleRouter);
+
+
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 
 
