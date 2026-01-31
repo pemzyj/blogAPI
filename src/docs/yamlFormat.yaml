@@ -1,0 +1,33 @@
+paths:
+  /endpoint-path:
+    http-method:
+      tags:
+        - Tag Name
+      summary: Short description
+      description: Longer detailed description
+      security:
+        - BearerAuth: []  # If authentication required
+      parameters:
+        - name: paramName
+          in: path/query/header
+          required: true/false
+          schema:
+            type: string/integer/boolean
+      requestBody:
+        required: true/false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                field1:
+                  type: string
+                field2:
+                  type: integer
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object

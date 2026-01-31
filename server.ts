@@ -12,27 +12,35 @@ import getCommentRouter from './src/routes/getComments.js';
 import deleteCommentRouter from './src/routes/deleteComments.js';
 import getUsersByRoleRouter from './src/routes/getAllUsers.js';
 import { errorHandler, notFoundHandler } from './src/middlewares/errorHandler.js';
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './src/config/swagger.js';
 
 
 
 const app = express();
+
+
 
 const port = 8080;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use('/api', signUpRouter);
-app.use('/api', logInRouter);
-app.use('/api', createPostRouter);
-app.use('/api', getPostRouter);
-app.use('/api', getPostByQuery);
-app.use('/api', updatePostsRouter);
-app.use('/api', deletePostRouter);
-app.use('/api', createCommentRouter);
-app.use('/api', getCommentRouter);
-app.use('/api', deleteCommentRouter);
-app.use('/api', getUsersByRoleRouter);
+
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+
+app.use('/api/v1', signUpRouter);
+app.use('/api/v1', logInRouter);
+app.use('/api/v1', createPostRouter);
+app.use('/api/v1', getPostRouter);
+app.use('/api/v1', getPostByQuery);
+app.use('/api/v1', updatePostsRouter);
+app.use('/api/v1', deletePostRouter);
+app.use('/api/v1', createCommentRouter);
+app.use('/api/v1', getCommentRouter);
+app.use('/api/v1', deleteCommentRouter);
+app.use('/api/v1', getUsersByRoleRouter);
 
 
 app.use(notFoundHandler);
@@ -41,6 +49,10 @@ app.use(errorHandler);
 
 
 
+app.get('/swagger.json', function(req, res) {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(swaggerSpec);
+});
 
 
 
