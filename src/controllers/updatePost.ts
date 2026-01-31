@@ -1,22 +1,23 @@
 import { Request, Response } from "express";
 import pool from "../database/db.js";
+import { BadRequestError, ForbiddenError, NotFoundError } from "../utils/error.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
 
-const updatePostController = async(req: Request, res: Response) => {
-    try{
+const updatePostController = asyncHandler(async(req: Request, res: Response) => {
         if (req.user?.role !== "author") {
-            return res.status(403).json({msg: "Unauthorized"});
+            throw new ForbiddenError('Permission denied');
         }
 
         const {slug} = req.params;
 
         if (!slug || typeof slug !== 'string') {
-            return res.status(400).json({ error: 'Slug is required' });
+            throw new BadRequestError();
         }
 
         const slugRegex = /^[a-z0-9-]+$/;
         
         if (!slugRegex.test(slug)) {
-            return res.status(400).json({ error: 'Invalid slug format' });
+            throw new BadRequestError();
         }
 
 
@@ -27,13 +28,13 @@ const updatePostController = async(req: Request, res: Response) => {
         )
 
         if (postAuthor.rows.length === 0) {
-            return res.status(401).json({msg: "Post doesn't exist"});
+            throw new NotFoundError();
         }
 
         const author = postAuthor.rows[0].username;
 
         if (authorUserName !== author) {
-            return res.status(401).json({msg: "only post's author can edit post"});
+            throw new ForbiddenError();
         }
 
         const {title, content} = req.body;
@@ -45,7 +46,7 @@ const updatePostController = async(req: Request, res: Response) => {
         );
 
         if (result.rows.length === 0) {
-            return res.status(401).json({msg: "Post doesn't exist"});
+            throw new NotFoundError();
         }
 
         const updatedPost = result.rows[0];
@@ -53,10 +54,6 @@ const updatePostController = async(req: Request, res: Response) => {
         
 
         return res.status(201).json(updatedPost);
-    } catch (err) {
-        console.error(err);
-        return res.status(500).json({msg: "server error"});
-    }
-};
+});
 
 export default updatePostController;

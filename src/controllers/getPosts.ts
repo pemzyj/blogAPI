@@ -1,19 +1,19 @@
 import { Request, Response } from "express";
 import pool from "../database/db.js";
+import { BadRequestError, NotFoundError, UnauthorizedError } from "../utils/error.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
 
-export const getPostsController = async(req: Request, res: Response) => {
-    try {
-
+export const getPostsController = asyncHandler(async(req: Request, res: Response) => {
         const { slug } = req.params;
 
         if (!slug || typeof slug !== 'string') {
-            return res.status(400).json({ error: 'Slug is required' });
+            throw new BadRequestError();
         }
 
         // Validate slug format (lowercase, hyphens, alphanumeric)
         const slugRegex = /^[a-z0-9-]+$/;
         if (!slugRegex.test(slug)) {
-            return res.status(400).json({ error: 'Invalid slug format' });
+            throw new BadRequestError();
         }
 
         const result = await pool.query(
@@ -39,14 +39,14 @@ export const getPostsController = async(req: Request, res: Response) => {
         );
 
         if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Post not found' });
+            throw new NotFoundError();
         }
 
         const post = result.rows[0];
 
         // Only show published posts to public
         if (post.status !== 'published') {
-            return res.status(404).json({ error: 'Post not found' });
+            throw new NotFoundError();
         }
 
         res.json({
@@ -67,17 +67,11 @@ export const getPostsController = async(req: Request, res: Response) => {
                 commentCount: parseInt(post.comment_count)
             }
         });
+});
 
-    } catch (error) {
-        console.error('Error fetching post:', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-};
-
-export const getPostsByQueryController = async (req: Request, res: Response) => {
-    try {
+export const getPostsByQueryController = asyncHandler(async (req: Request, res: Response) => {
         if (!req.user) {
-            return res.status(401).json({ msg: 'User not authenticated' });
+            throw new UnauthorizedError();
         };
 
         const {author} = req.query;
@@ -106,7 +100,7 @@ export const getPostsByQueryController = async (req: Request, res: Response) => 
             );
 
             if (result.rows.length === 0) {
-                return res.status(404).json({ error: 'Post not found' });
+                throw new NotFoundError();
             }
 
             return res.json({  
@@ -151,7 +145,7 @@ export const getPostsByQueryController = async (req: Request, res: Response) => 
         );
 
         if (authorPost.rows.length === 0) {
-            return res.status(400).json('Author has no post');
+            throw new NotFoundError('Author has no post');
         }
 
         return res.json({  
@@ -171,10 +165,4 @@ export const getPostsByQueryController = async (req: Request, res: Response) => 
                     commentCount: parseInt(post.comment_count)
                 }))
             });
-
-
-    } catch (err) {
-        console.error('Unable to get author\'s posts', err);
-        return res.status(500).json({Error: 'Internal server error'});
-    };
-};
+});

@@ -65,9 +65,9 @@ app.listen (port, async () => {
 
     try {
       await pool.query('SELECT NOW()');
-      console.log('✅ Database connected');
+      console.log('Database connected');
     } catch (error) {
-      console.error('❌ Database connection failed:', error);
+      console.error('Database connection failed:', error);
     }
 });
 

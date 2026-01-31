@@ -1,13 +1,14 @@
 import pool from '../database/db.js';
 import { postCommentSchema } from '../schema.js';
 import { Request, Response } from 'express';
+import { BadRequestError, NotFoundError, UnauthorizedError } from '../utils/error.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
 
-const createCommentsController = async (req: Request, res: Response) => {
+const createCommentsController = asyncHandler (async (req: Request, res: Response) => {
     const postComment = postCommentSchema.safeParse(req.body);
     if (postComment.success) {
-            try {
             if (!req.user) {
-                return res.status(401).json({ msg: 'User not authenticated' });
+                throw new UnauthorizedError();
             }
 
             const { slug } = req.params;
@@ -15,21 +16,21 @@ const createCommentsController = async (req: Request, res: Response) => {
 
             // Validate inputs
             if (!slug || typeof slug !== 'string') {
-                return res.status(400).json({ error: 'Slug is required' });
+                throw new BadRequestError();
             }
 
             // Validate slug format (lowercase, hyphens, alphanumeric)
             const slugRegex = /^[a-z0-9-]+$/;
             if (!slugRegex.test(slug)) {
-                return res.status(400).json({ error: 'Invalid slug format' });
+                throw new BadRequestError();
             }
 
             if (!postComment.data.content) {
-                return res.status(400).json({ msg: 'Comment content is required' });
+                throw new BadRequestError();
             }
 
             if (postComment.data.content.length > 1000) {
-                return res.status(400).json({ msg: 'Comment must be less than 1000 characters' });
+                throw new BadRequestError('comment must be less than 1000 characters');
             }
 
             // Check post exists and is published
@@ -40,11 +41,11 @@ const createCommentsController = async (req: Request, res: Response) => {
 
 
             if (postCheck.rows.length === 0) {
-                return res.status(404).json({ msg: 'Post not found' });
+                throw new NotFoundError;
             }
 
             if (postCheck.rows[0].status !== 'published') {
-                return res.status(403).json({ msg: 'Cannot comment on unpublished posts' });
+                throw new NotFoundError();
             }
 
             const postId = postCheck.rows[0].id;
@@ -52,7 +53,7 @@ const createCommentsController = async (req: Request, res: Response) => {
             // Verify parent comment if provided
             if (postComment.data.parentId) {
                 if (typeof postComment.data.parentId !== 'number') {
-                    return res.status(400).json({ msg: 'Invalid parent comment ID' });
+                    throw new BadRequestError();
                 }
 
                 const parentCheck = await pool.query(
@@ -61,11 +62,11 @@ const createCommentsController = async (req: Request, res: Response) => {
                 );
 
                 if (parentCheck.rows.length === 0) {
-                    return res.status(404).json({ msg: 'Parent comment not found' });
+                    throw new NotFoundError();
                 }
 
                 if (parentCheck.rows[0].post_id !== parseInt(postId)) {
-                    return res.status(400).json({ msg: 'Parent comment does not belong to this post' });
+                    throw new NotFoundError('Parent comment does not belong to this post');
                 }
             }
 
@@ -106,16 +107,11 @@ const createCommentsController = async (req: Request, res: Response) => {
                     }
                 }
             });
-
-        } catch (err) {
-            console.error('Error creating comment:', err);
-            return res.status(500).json({ msg: 'Server error' });
-        }
     } else {
         return res.status(500).json(postComment.error)   
     }
 
     
-};
+});
 
 export default createCommentsController;

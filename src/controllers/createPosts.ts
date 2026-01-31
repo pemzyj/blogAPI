@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import pool from '../database/db.js';
 import { postContentSchema } from '../schema.js';
+import { BadRequestError, ConflictError, ForbiddenError, UnauthorizedError } from '../utils/error.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
 
 
 
@@ -8,17 +10,16 @@ type PostStatus = 'draft' | 'published' | 'archived';
 
 // only an author can create post, so authenticate user as author
 
-const createPostsController = async(req: Request, res: Response)=> {
+const createPostsController = asyncHandler(async(req: Request, res: Response)=> {
     const post = postContentSchema.safeParse(req.body);
     if (post.success) {
-        try{
             if (!req.user) {
-                return res.status(401).json({ msg: 'User not authenticated' });
+                throw new UnauthorizedError();
             };
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     
 
             if (req.user?.role !== 'author') {
-                return res.status(400). json({msg: 'Only authors can create post'})
+                throw new ForbiddenError();
             };
 
             const {status = 'draft'} = req.body;
@@ -26,10 +27,7 @@ const createPostsController = async(req: Request, res: Response)=> {
 
             const validStatuses: PostStatus[] = ['draft', 'published', 'archived'];
             if (!validStatuses.includes(status)) {
-                return res.status(400).json({
-                    msg: 'Invalid status. Must be one of: draft, published, archived',
-                    validStatuses: validStatuses
-                });
+                throw new BadRequestError();
             };
 
             const generateSlug = (title: string): string => {
@@ -49,9 +47,7 @@ const createPostsController = async(req: Request, res: Response)=> {
             );
 
             if (slugCheck.rows.length > 0) {
-                return res.status(400).json({
-                    msg: 'A post with this title already exists. Please use a different title.'
-                });
+                throw new ConflictError();
             }; 
 
             const publishedAt = status === 'published' ? new Date() : null;
@@ -76,15 +72,10 @@ const createPostsController = async(req: Request, res: Response)=> {
                     published_at: newPost.publishedAt
                 }
             });
-
-        }catch (err) {
-            console.error('Unable to create post', err);
-            return res.status(500).json({msg:'server error'})
-        }
     } else {
         return res.status(500).json(post.error)
     }
     
-};
+});
 
 export default createPostsController;

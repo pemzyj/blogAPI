@@ -1,11 +1,12 @@
 import pool from '../database/db.js';
 import { Request, Response } from 'express';
+import { BadRequestError, ForbiddenError, NotFoundError, UnauthorizedError } from '../utils/error.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
 
 
-const deleteCommentsController = async(req: Request, res: Response) => {
-    try{
+const deleteCommentsController = asyncHandler(async(req: Request, res: Response) => {
         if (req.user?.role !== 'admin' && req.user?.role !== 'reader') {
-            return res.status(403).json('cannot delete post');
+            throw new ForbiddenError();
         }
 
         const {id} = req.params;
@@ -13,7 +14,7 @@ const deleteCommentsController = async(req: Request, res: Response) => {
         const userId = req.user?.id;
 
         if (!id || typeof id === 'number') {
-            return res.status(400).json('Invalid id');
+            throw new BadRequestError();
         }
 
         // Check if comment exists and get its details
@@ -30,7 +31,7 @@ const deleteCommentsController = async(req: Request, res: Response) => {
             );
 
             if (commentCheck.rows.length === 0) {
-                return res.status(404).json({ msg: 'Comment not found' });
+                throw new NotFoundError();
             }
 
             const comment = commentCheck.rows[0];
@@ -42,11 +43,7 @@ const deleteCommentsController = async(req: Request, res: Response) => {
         const isAdmin = userRole === 'admin';
 
         if (!isOwner && !isAdmin) {
-            return res.status(403).json({ 
-                msg: 'Access denied. You can only delete your own comments.',
-                commentOwner: comment.author_name,
-                yourRole: userRole
-            });
+            throw new ForbiddenError();
         }
         
 
@@ -54,7 +51,7 @@ const deleteCommentsController = async(req: Request, res: Response) => {
         
 
         if (result.rows.length === 0) {
-            return res.status(401).json('Comment does not exist');
+            throw new NotFoundError();
         }
 
         return res.status(200).json({
@@ -64,10 +61,6 @@ const deleteCommentsController = async(req: Request, res: Response) => {
                 : 'Comment deleted successfully',
             deletedCommentId: result.rows[0].id
         });
-    } catch (err) {
-        console.error('Error deleting comment:', err);
-        return res.status(500).json({ msg: 'Server error' });
-    }
-};
+});
 
 export default deleteCommentsController;

@@ -1,15 +1,16 @@
 import { Request, Response } from 'express';
 import pool from '../database/db.js';
+import { ForbiddenError, NotFoundError, UnauthorizedError } from '../utils/error.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
 //to delete post
 // only admin and author can delete post
 // check if post exist
 // admin can delete any post
 // author can only delete his own post
 
-const deletePostsController = async (req: Request, res: Response) => {
-    try{
+const deletePostsController = asyncHandler(async (req: Request, res: Response) => {
         if (req.user?.role !== 'admin' && req.user?.role !== 'author') {
-            return res.status(403).json({msg: "access denied"});
+            throw new ForbiddenError();
         }
 
         const {slug} = req.params;
@@ -28,7 +29,7 @@ const deletePostsController = async (req: Request, res: Response) => {
         );
 
         if (existingPost.rows.length === 0) {
-            return res.status(404).json({ msg: 'Post not found' });
+            throw new NotFoundError();
         }
 
         const post = existingPost.rows[0];
@@ -37,11 +38,7 @@ const deletePostsController = async (req: Request, res: Response) => {
         const isAuthor = post.author_id = userId;
 
         if (!isAdmin || !isAuthor) {
-            return res.status(403).json({ 
-                msg: 'Access denied. You can only delete your own posts.',
-                postOwner: post.author_name,
-                yourRole: userRole
-            });
+            throw new ForbiddenError();
         }
 
         
@@ -51,7 +48,7 @@ const deletePostsController = async (req: Request, res: Response) => {
         );
 
         if (result.rows.length === 0) {
-            return res.status(401).json({msg: 'Post does not exists'})
+            throw new NotFoundError();
         };
 
 
@@ -62,10 +59,6 @@ const deletePostsController = async (req: Request, res: Response) => {
                 : 'Post deleted successfully',
             deletedPostId: result.rows[0].id
         });
-    } catch (err) {
-        console.error('Error deleting post:', err);
-        return res.status(500).json({ msg: 'Server error' });
-    }
-};
+});
 
 export default deletePostsController;

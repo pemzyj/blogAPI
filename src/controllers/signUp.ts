@@ -2,19 +2,19 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import pool from "../database/db.js";
 import { signUpSchema } from "../schema.js";
+import { asyncHandler } from '../utils/asyncHandler.js';
+import { ConflictError } from '../utils/error.js';
 
-const signUpController = async (req: Request, res: Response) => {
+const signUpController = asyncHandler(async (req: Request, res: Response) => {
     const signUp = signUpSchema.safeParse(req.body)
     if (signUp.success) {
-        try {
-
         // check that email and username are unique
         const result = await pool.query(
             'SELECT * FROM users WHERE email = $1', [signUp.data.email]
         );
 
         if (result.rows.length > 0) {
-            return res.status(400).json({msg: `${signUp.data.email} already exists`})
+            throw new ConflictError(`${signUp.data.email} already exists`);
         };
 
 
@@ -23,7 +23,7 @@ const signUpController = async (req: Request, res: Response) => {
         );
 
         if (userResult.rows.length > 0) {
-            return res.status(400).json({msg: `${signUp.data.username} already exists`})
+            throw new ConflictError(`${signUp.data.username} already exists`);
         };
 
 
@@ -45,13 +45,9 @@ const signUpController = async (req: Request, res: Response) => {
                 role: newUser.role
             }
         })
-        } catch (err) {
-            console.error('Registration Error:', err)
-            return res.status(500).json({msg: 'server error'})
-        };
     } else {
         return res.status(500).json(signUp.error)
     }
-};
+});
 
 export default signUpController;

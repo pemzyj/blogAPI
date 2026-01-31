@@ -1,18 +1,19 @@
 import { Request, Response } from "express";
 import pool from "../database/db.js";
+import { BadRequestError, NotFoundError } from "../utils/error.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
 
-const getCommentsController = async(req: Request, res: Response) => {
-    try {
+const getCommentsController = asyncHandler(async(req: Request, res: Response) => {
         const { slug } = req.params;
 
         // Validate slug
         if (!slug || typeof slug !== 'string') {
-            return res.status(400).json({ error: 'Slug is required' });
+            throw new BadRequestError();
         }
 
         const slugRegex = /^[a-z0-9-]+$/;
         if (!slugRegex.test(slug)) {
-            return res.status(400).json({ error: 'Invalid slug format' });
+            throw new BadRequestError();
         }
 
         // Get post ID from slug
@@ -22,14 +23,14 @@ const getCommentsController = async(req: Request, res: Response) => {
         );
 
         if (postCheck.rows.length === 0) {
-            return res.status(404).json({ msg: 'Post not found' });
+            throw new NotFoundError();
         }
 
         const post = postCheck.rows[0];
 
         // Only show comments for published posts (unless you want to allow authors to see drafts)
         if (post.status !== 'published') {
-            return res.status(403).json({ msg: 'Cannot view comments on unpublished posts' });
+            throw new NotFoundError();
         }
 
         const postId = post.id;
@@ -68,11 +69,6 @@ const getCommentsController = async(req: Request, res: Response) => {
                 }
             }))
         });
-
-    } catch (err) {
-        console.error('Error fetching comments:', err);
-        return res.status(500).json({ msg: 'Server error' });
-    }
-};
+});
 
 export default getCommentsController;

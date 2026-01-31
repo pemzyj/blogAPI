@@ -3,38 +3,36 @@ import pool from "../database/db.js";
 import jwt from 'jsonwebtoken';
 import { signInSchema } from '../schema.js';
 import bcrypt from 'bcrypt';
+import { BadRequestError, NotFoundError } from "../utils/error.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
 
 
-const signInController = async (req: Request,res: Response)=> {
+const signInController = asyncHandler(async (req: Request,res: Response)=> {
     const signIn = signInSchema.safeParse(req.body);
     if(signIn.success) {
-        try {
             // ensure email and password exists
             if (!signIn.data.email) {
-                return res.status(401).json({msg: 'email is required'})
-            };
+                throw new BadRequestError('email is required');
+            }
 
             if (!signIn.data.password) {
-                return res.status(401).json({msg: 'password is required'})
-            };
+                throw new BadRequestError('password is required');
+            }
 
             //check user exist
             const existingUser = await pool.query(
                 'SELECT id, email, password_hash, username, role FROM users WHERE email = $1', [signIn.data.email]
-            );
+            )
 
             if (existingUser.rows.length === 0) {
-                return res.status(401).json({
-                    err: 'user doesn\'t exist',
-                    msg: 'Please signup'
-                })
-            };
+                throw new NotFoundError('Please signup');
+            }
 
             const user = existingUser.rows[0];
 
 
             if(!user.password_hash) {
-                return res.status(401).json({msg: "Password doesn\'t exist"})
+                throw new NotFoundError('Password doesn\'t exists');
             };
             
 
@@ -43,10 +41,8 @@ const signInController = async (req: Request,res: Response)=> {
             const isMatch = await bcrypt.compare(signIn.data.password, user.password_hash);
 
             if (!isMatch) {
-                return res.status(401).json({
-                    msg: 'invalid email or password'
-                })
-            };
+                throw new BadRequestError('Invalid email or password');
+            }
 
             
             const JWTSecretKey = 'AuthorizationSecretKey';
@@ -67,14 +63,10 @@ const signInController = async (req: Request,res: Response)=> {
                 role: user.role,
                 token
             }); 
-        }catch(err) {
-            console.error('Unable to Login', err);
-            return res.status(500).json('Server error')
-        }
     } else {
         return res.status(500).json(signIn.error)
     }
     
-};
+});
 
 export default signInController;
