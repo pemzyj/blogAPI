@@ -7,7 +7,7 @@
   "type": "module",
   "main": "server.ts",
   "scripts": {
-    "dev": "nodemon --exec tsx server.ts",
+    "dev": "nodemon --env-file=.env --exec tsx server.ts",
     "start": "node server.ts",
     "test": "jest"
   },

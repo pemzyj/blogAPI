@@ -8,21 +8,15 @@ const options: swaggerJSDoc.Options = {
             title: 'Blog API',
             version: '1.0.0',
             description: 'A RESTful Blog API with authentication',
-            contact: {
-                name: 'API Support',
-                email: 'support@blogapi.com'
-            },
-            license: {
-                name: 'MIT',
-                url: 'https://opensource.org/licenses/MIT'
-            }
         },
+
         servers: [
             {
-                url: 'http://localhost:8080/api',
+                url: 'http://localhost:8080/api/v1',
                 description: 'Development server'
             }
         ],
+        
         components: {
             securitySchemes: {
                 BearerAuth: {

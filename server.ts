@@ -1,4 +1,5 @@
 import 'dotenv/config';
+
 import express from "express";
 import pool from './src/database/db.js';
 import signUpRouter from './src/routes/signup.js';
@@ -13,7 +14,7 @@ import deleteCommentRouter from './src/routes/deleteComments.js';
 import getUsersByRoleRouter from './src/routes/getAllUsers.js';
 import { errorHandler, notFoundHandler } from './src/middlewares/errorHandler.js';
 import swaggerUi from 'swagger-ui-express';
-import { swaggerSpec } from './src/config/swagger.js';
+// import { swaggerSpec } from './src/config/swagger.js';
 
 
 
@@ -21,13 +22,13 @@ const app = express();
 
 
 
-const port = 8080;
+const port = process.env.PORT;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+// app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 
 app.use('/api/v1', signUpRouter);
@@ -51,7 +52,7 @@ app.use(errorHandler);
 
 app.get('/swagger.json', function(req, res) {
   res.setHeader('Content-Type', 'application/json');
-  res.send(swaggerSpec);
+  // res.send(swaggerSpec);
 });
 
 

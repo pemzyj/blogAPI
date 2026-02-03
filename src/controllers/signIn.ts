@@ -45,7 +45,7 @@ const signInController = asyncHandler(async (req: Request,res: Response)=> {
             }
 
             
-            const JWTSecretKey = 'AuthorizationSecretKey';
+            const JWTSecretKey = process.env.JWT_SecretKey as string;
 
             const payload = {
                 role: user.role,
