@@ -25,9 +25,15 @@ const options: swaggerJSDoc.Options = {
                     bearerFormat: 'JWT'
                 }
             }
-        }
+        },
+
+        security: [
+            {
+                bearerAuth: []
+            }
+        ]
     },
-    apis: ['./src/routes/*.ts'] // Path to route files
+    apis: ['../routes/*.ts'] // Path to route files
 };
 
 export const swaggerSpec = swaggerJSDoc(options);

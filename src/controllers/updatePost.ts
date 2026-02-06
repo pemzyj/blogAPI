@@ -2,8 +2,11 @@ import { Request, Response } from "express";
 import pool from "../database/db.js";
 import { BadRequestError, ForbiddenError, NotFoundError } from "../utils/error.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
+import { updatePostSchema } from "../schema.js";
 
 const updatePostController = asyncHandler(async(req: Request, res: Response) => {
+    const updatePost = updatePostSchema.safeParse(req.body);
+    if (updatePost.success) {
         if (req.user?.role !== "author") {
             throw new ForbiddenError('Permission denied');
         }
@@ -37,12 +40,11 @@ const updatePostController = asyncHandler(async(req: Request, res: Response) => 
             throw new ForbiddenError();
         }
 
-        const {title, content} = req.body;
 
         const updated_at = new Date();
 
         const result = await pool.query(
-            'UPDATE posts SET title = $1, content = $2, updated_at = $3 WHERE slug = $4 RETURNING (title, content, updated_at)', [title, content, updated_at, slug]
+            'UPDATE posts SET title = $1, content = $2, updated_at = $3 WHERE slug = $4 RETURNING (title, content, updated_at)', [updatePost.data.title, updatePost.data.content, updated_at, slug]
         );
 
         if (result.rows.length === 0) {
@@ -54,6 +56,9 @@ const updatePostController = asyncHandler(async(req: Request, res: Response) => 
         
 
         return res.status(201).json(updatedPost);
+    } else {
+        return res.status(500).json(updatePost.error)
+    }
 });
 
 export default updatePostController;
