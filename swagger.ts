@@ -1,7 +1,12 @@
-import swaggerJSDoc from 'swagger-jsdoc';
+import { fileURLToPath } from 'node:url';
+import swaggerJsDoc from 'swagger-jsdoc';
+import path from 'node:path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 
-const options: swaggerJSDoc.Options = {
+const swaggerSpec = swaggerJsDoc ({
     definition: {
         openapi: '3.0.3',
         info: {
@@ -33,7 +38,10 @@ const options: swaggerJSDoc.Options = {
             }
         ]
     },
-    apis: ['../routes/*.ts'] // Path to route files
-};
+    
+    apis: ['./src/routes/*.ts'] // Path to route files
+});
 
-export const swaggerSpec = swaggerJSDoc(options);
+
+
+export default swaggerSpec;

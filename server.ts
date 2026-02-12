@@ -14,7 +14,7 @@ import deleteCommentRouter from './src/routes/deleteComments.js';
 import getUsersByRoleRouter from './src/routes/getAllUsers.js';
 import { errorHandler, notFoundHandler } from './src/middlewares/errorHandler.js';
 import swaggerUi from 'swagger-ui-express';
-// import { swaggerSpec } from './src/config/swagger.js';
+import swaggerSpec  from './swagger.js';
 
 
 
@@ -26,9 +26,6 @@ const port = process.env.PORT;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-
-// app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 
 app.use('/api/v1', signUpRouter);
@@ -43,17 +40,12 @@ app.use('/api/v1', getCommentRouter);
 app.use('/api/v1', deleteCommentRouter);
 app.use('/api/v1', getUsersByRoleRouter);
 
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+
 
 app.use(notFoundHandler);
 app.use(errorHandler);
-
-
-
-
-app.get('/swagger.json', function(req, res) {
-  res.setHeader('Content-Type', 'application/json');
-  // res.send(swaggerSpec);
-});
 
 
 
